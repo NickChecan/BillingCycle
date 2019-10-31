@@ -1,0 +1,39 @@
+version: '3'
+volumes:
+  data: # Data storage volume
+networks:
+  database: # Database network
+  web: # Frontend communication
+services: 
+  db:
+    image: mongo:4.0.5
+    volumes:
+      # Mongo data volume
+      - data:/data/db
+    networks: 
+      - database
+  backend: 
+    image: node:11.6.0
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/backend
+    networks: 
+      - database
+      - web
+    ports:
+      - 3003:3003
+    command: bash -c "cd /backend && npm i && npm run dev"
+  frontend: 
+    build: 
+      context: ./frontend
+    volumes: 
+      # Reverse proxy configuration
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks: 
+      - web
+    depends_on:
+      - db
+      - backend
+    ports:
+      - 4000:4000
